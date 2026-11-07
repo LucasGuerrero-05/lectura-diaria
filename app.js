@@ -165,6 +165,7 @@ async function vLector(a) {
     zona.replaceChildren();
     const mapa = Object.fromEntries(d.versos.map((v) => [v.v, v]));
     zona.append(el("h2", {}, "Comentario de Gill"));
+    if (!d.versos.length) zona.append(el("div", { class: "info" }, el("b", {}, "Comentario en bloque"), el("span", {}, "Para este capítulo el texto de Gill no trae comentario versículo por versículo; lo que hay es la introducción de abajo.")));
     zona.append(el("div", { class: "tabs2", role: "tablist" },
       el("button", { class: view.modo === "esencial" ? "on" : "", onclick: () => ir("esencial") }, ico("luz", "sm"), "Lo esencial"),
       el("button", { class: view.modo === "completo" ? "on" : "", onclick: () => ir("completo") }, ico("rollo", "sm"), "Comentario completo")));
