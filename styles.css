@@ -119,3 +119,6 @@ nav button.on{color:var(--ac);background:var(--bg2)}
 input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{opacity:.6}
 @media(prefers-color-scheme:dark){:root:not([data-theme=claro]) input::-webkit-calendar-picker-indicator{filter:invert(1)}}
 :root[data-theme=oscuro] input::-webkit-calendar-picker-indicator{filter:invert(1)}
+
+.zona{scroll-margin-top:62px}
+.top .ghost{flex:none}

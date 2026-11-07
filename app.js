@@ -147,13 +147,14 @@ function vMapa(a) {
 // ---------- lector ----------
 async function vLector(a) {
   const { b, c } = view;
-  a.append(el("div", { class: "top" }, el("button", { class: "ghost", "aria-label": "Volver", onclick: () => { view = null; render(); } }, ico("atras")), el("h1", {}, nombre(b, c))));
+  a.append(el("div", { class: "top" }, el("button", { class: "ghost", "aria-label": "Volver", onclick: () => { view = null; render(); } }, ico("atras")), el("h1", {}, nombre(b, c)),
+    el("button", { class: "ghost", id: "btnCom", "aria-label": "Ir al comentario completo", title: "Comentario completo" }, ico("rollo"))));
   const cargando = el("p", { class: "mut" }, "Cargando…"); a.append(cargando);
   let rv;
   try { rv = (await get("data/b/" + b + ".json"))[c - 1]; } catch (e) { cargando.textContent = "No se pudo cargar el texto. Revisá tu conexión."; return; }
   cargando.remove();
   const tx = el("div", { class: "versos" }); rv.forEach((v, i) => tx.append(el("p", { class: "v" }, el("sup", {}, i + 1), v))); a.append(tx);
-  const zona = el("div"); a.append(zona);
+  const zona = el("div", { class: "zona" }); a.append(zona);
   const sig = () => {
     const prev = c > 1 ? [b, c - 1] : b > 0 ? [b - 1, LIBROS[b - 1].c] : null, n = c < LIBROS[b].c ? [b, c + 1] : b < 65 ? [b + 1, 1] : null;
     return el("div", { class: "nextbar" }, prev && el("button", { class: "sec", onclick: () => abrir(...prev) }, ico("izq", "sm"), "Anterior"), n && el("button", { onclick: () => abrir(...n) }, "Siguiente", ico("der", "sm")));
@@ -165,8 +166,8 @@ async function vLector(a) {
     const mapa = Object.fromEntries(d.versos.map((v) => [v.v, v]));
     zona.append(el("h2", {}, "Comentario de Gill"));
     zona.append(el("div", { class: "tabs2", role: "tablist" },
-      el("button", { class: view.modo === "esencial" ? "on" : "", onclick: () => { view.modo = "esencial"; pintar(); } }, ico("luz", "sm"), "Lo esencial"),
-      el("button", { class: view.modo === "completo" ? "on" : "", onclick: () => { view.modo = "completo"; pintar(); } }, ico("rollo", "sm"), "Comentario completo")));
+      el("button", { class: view.modo === "esencial" ? "on" : "", onclick: () => ir("esencial") }, ico("luz", "sm"), "Lo esencial"),
+      el("button", { class: view.modo === "completo" ? "on" : "", onclick: () => ir("completo") }, ico("rollo", "sm"), "Comentario completo")));
     if (view.modo === "completo") {
       const f = el("div", { class: "full" });
       if (d.intro) { f.append(el("h3", {}, "Introducción al capítulo")); d.intro.split(/\n\s*\n/).forEach((p) => f.append(el("p", { class: "com" }, p))); }
@@ -181,16 +182,18 @@ async function vLector(a) {
       }
       zona.append(el("h2", {}, "Por versículo"));
       d.versos.forEach((v) => zona.append(el("details", d.claves.includes(v.v) ? { open: "" } : {}, el("summary", {}, "Versículo " + v.v), ...v.p.map((p) => el("p", { class: "com" }, p)))));
-      zona.append(el("button", { class: "big", onclick: () => { view.modo = "completo"; pintar(); window.scrollTo({ top: zona.offsetTop - 60 }); } }, ico("rollo", "sm"), "Leer todo el comentario completo"));
+      zona.append(el("button", { class: "big", onclick: () => ir("completo") }, ico("rollo", "sm"), "Leer todo el comentario completo"));
     }
     zona.append(sig());
   };
   const accion = el("div");
+  const ir = async (modo) => { accion.remove(); view.modo = modo; await pintar(); window.scrollTo({ top: zona.getBoundingClientRect().top + window.scrollY - 62, behavior: "instant" }); };
+  $("#btnCom").onclick = () => ir("completo");
   if (isRead(b, c)) { a.insertBefore(el("div", { class: "row", style: "margin-top:10px" }, el("span", { class: "chip ok" }, ico("check", "sm"), "Leído")), zona); pintar(); }
   else {
     accion.append(
       el("button", { class: "big", onclick: async () => { S.read[ck(b, c)] = hoy(); save(); accion.remove(); await pintar(); } }, ico("check", "sm"), "Terminé de leer · ver comentario"),
-      el("button", { class: "big sec", onclick: () => { accion.remove(); pintar(); } }, ico("rollo", "sm"), "Ver comentario sin marcar como leído"));
+      el("button", { class: "big sec", onclick: () => ir("completo") }, ico("rollo", "sm"), "Leer comentario completo"));
     a.insertBefore(accion, zona);
   }
 }
