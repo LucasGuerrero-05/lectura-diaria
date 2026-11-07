@@ -1,4 +1,4 @@
-const V = "ld-v2", SHELL = ["./", "index.html", "app.js", "styles.css", "manifest.json", "icon.svg", "data/libros.json"];
+const V = "ld-v3", SHELL = ["./", "index.html", "app.js", "styles.css", "manifest.json", "icon.svg", "data/libros.json"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((x) => x !== V && x !== "cfg").map((x) => caches.delete(x)))).then(() => self.clients.claim())));
 // Archivos de la app: primero la red (para recibir mejoras), si no hay conexión, la copia guardada.
