@@ -3,47 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2b3a55">
+<meta name="theme-color" content="#7a3b1d">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 <title>Lectura diaria</title>
-<style>
-:root{--bg:#faf7f0;--card:#fff;--tx:#23262d;--mut:#6b7280;--ac:#2b3a55;--ok:#3f8f5f;--ln:#e6e0d2;--fs:19px}
-@media(prefers-color-scheme:dark){:root{--bg:#15171c;--card:#1f2229;--tx:#e8e6e1;--mut:#9aa0ab;--ac:#8fb0e8;--ok:#58b27d;--ln:#2e323b}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,Segoe UI,Roboto,sans-serif;padding-bottom:76px}
-main{max-width:760px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:4px 0 12px}h2{font-size:18px;margin:18px 0 8px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin:10px 0}
-.mut{color:var(--mut);font-size:14px}
-button,select,input{font:inherit;color:inherit}
-button{background:var(--ac);color:var(--bg);border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
-button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
-button.big{width:100%;padding:14px;font-size:17px;margin-top:10px}
-select,input[type=number],input[type=time],input[type=date]{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:8px}
-.bar{height:10px;background:var(--ln);border-radius:6px;overflow:hidden;margin:8px 0}
-.bar>i{display:block;height:100%;background:var(--ok)}
-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--ln);display:flex;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;color:var(--mut);border-radius:0;padding:12px 4px;font-size:13px}
-nav button.on{color:var(--ac);font-weight:600}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.cap{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--ln);border-radius:10px;margin:6px 0;cursor:pointer}
-.cap.done{opacity:.6}.cap b{font-weight:600}
-.v{font-size:var(--fs);line-height:1.65;font-family:Georgia,serif;margin:.3em 0}
-.v sup{color:var(--mut);font-size:.6em;margin-right:3px}
-.com{font-size:16px;line-height:1.6}
-.com p{margin:.5em 0}
-details{border-top:1px solid var(--ln);padding:6px 0}summary{cursor:pointer;font-weight:600}
-.libro{margin:10px 0}.libro .n{font-size:14px;font-weight:600}
-.cells{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
-.cell{width:18px;height:18px;border-radius:4px;background:var(--ln);font-size:9px;display:flex;align-items:center;justify-content:center;color:var(--mut);cursor:pointer}
-.cell.r{background:var(--ok);color:#fff}
-.tag{display:inline-block;background:var(--ln);border-radius:20px;padding:2px 10px;font-size:13px;margin-right:4px}
-</style>
 </head>
 <body>
 <main id="app"></main>
-<nav id="nav"></nav>
+<nav id="nav" aria-label="Principal"></nav>
 <script src="app.js"></script>
 </body>
 </html>
