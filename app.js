@@ -13,6 +13,7 @@ const IC = {
   leer: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
   mapa: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   ajustes: '<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+  abajo: '<path d="m6 9 6 6 6-6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   der: '<path d="m9 18 6-6-6-6"/>',
   izq: '<path d="m15 18-6-6 6-6"/>',
@@ -75,14 +76,16 @@ function racha() {
 function nav() {
   const n = $("#nav"); n.replaceChildren();
   [["hoy", "Hoy"], ["leer", "Leer"], ["mapa", "Mapa"], ["ajustes", "Ajustes"]].forEach(([k, t]) =>
-    n.append(el("button", { class: tab === k && !view ? "on" : "", "aria-label": t, onclick: () => { tab = k; view = null; render(); } }, ico(k), t)));
+    n.append(el("button", { class: (k === "leer" ? (tab === "leer" && (view || elegir)) || (view && tab === "leer") : tab === k && !view) ? "on" : "", "aria-label": t, onclick: () => { tab = k; if (k === "leer") return continuar(); view = null; elegir = false; render(); } }, ico(k), t)));
 }
 async function render() {
   nav(); const a = $("#app"); a.replaceChildren(); window.scrollTo(0, 0);
   if (view) return vLector(a);
   ({ hoy: vHoy, leer: vLeer, mapa: vMapa, ajustes: vAjustes })[tab](a);
 }
-const abrir = (b, c) => { view = { b, c, modo: "esencial" }; render(); };
+let elegir = false;
+const abrir = (b, c) => { tab = "leer"; elegir = false; S.pos = { b, c, y: 0 }; save(); view = { b, c, modo: "esencial" }; render(); };
+const continuar = () => { const p = S.pos || { b: 0, c: 1, y: 0 }; elegir = false; view = { b: p.b, c: p.c, modo: "esencial", y: p.y || 0 }; render(); };
 const barra = (p) => el("div", { class: "bar" }, el("i", { style: "width:" + p + "%" }));
 
 function anillo(pct) {
@@ -127,7 +130,8 @@ function segTestamento(valor, alCambiar, conTodo) {
 }
 let testLeer = "at", testMapa = "todo";
 function vLeer(a) {
-  a.append(el("h1", {}, "Leer"), el("p", { class: "sub" }, "Elegí el testamento, el libro y el capítulo"));
+  a.append(el("h1", {}, "Elegir capítulo"), el("p", { class: "sub" }, "Elegí el testamento, el libro y el capítulo"));
+  if (S.pos) a.append(el("button", { class: "sec big", style: "margin:0 0 6px", onclick: continuar }, ico("leer", "sm"), "Volver a " + nombre(S.pos.b, S.pos.c)));
   const card = el("div", { class: "card" });
   const pintar = () => {
     card.replaceChildren(segTestamento(testLeer, (k) => { testLeer = k; pintar(); }));
@@ -166,7 +170,7 @@ const vecinos = (b, c) => ({
 });
 async function vLector(a) {
   const { b, c } = view;
-  a.append(el("div", { class: "top" }, el("button", { class: "ghost", "aria-label": "Volver", onclick: () => { view = null; render(); } }, ico("atras")), el("h1", {}, nombre(b, c)),
+  a.append(el("div", { class: "top" }, el("button", { class: "ghost", "aria-label": "Volver", onclick: () => { view = null; render(); } }, ico("atras")), el("h1", {}, el("button", { class: "tit", "aria-label": "Elegir otro libro o capítulo", onclick: () => { elegir = true; view = null; tab = "leer"; render(); } }, nombre(b, c), ico("abajo", "sm"))),
     el("button", { class: "ghost", id: "btnPrev", "aria-label": "Capítulo anterior", onclick: () => { const v = vecinos(view.b, view.c).prev; if (v) abrir(...v); } }, ico("izq")),
     el("button", { class: "ghost", id: "btnNext", "aria-label": "Capítulo siguiente", onclick: () => { const v = vecinos(view.b, view.c).next; if (v) abrir(...v); } }, ico("der")),
     el("button", { class: "ghost", id: "btnCom", "aria-label": "Ir al comentario completo", title: "Comentario completo" }, ico("rollo"))));
@@ -175,6 +179,7 @@ async function vLector(a) {
   try { rv = (await get("data/b/" + b + ".json"))[c - 1]; } catch (e) { cargando.textContent = "No se pudo cargar el texto. Revisá tu conexión."; return; }
   cargando.remove();
   const tx = el("div", { class: "versos" }); rv.forEach((v, i) => tx.append(el("p", { class: "v" }, el("sup", {}, i + 1), v))); a.append(tx);
+  if (view.y) { const y = view.y; view.y = 0; requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" })); }
   {
     const v = vecinos(b, c);
     a.append(el("div", { class: "nextbar" }, v.prev && el("button", { class: "sec", onclick: () => abrir(...v.prev) }, ico("izq", "sm"), nombre(...v.prev)),
@@ -322,6 +327,8 @@ async function chequearRecordatorio() {
   }
 }
 
+let _t;
+addEventListener("scroll", () => { if (!view || !S.pos || S.pos.b !== view.b || S.pos.c !== view.c) return; clearTimeout(_t); _t = setTimeout(() => { S.pos.y = Math.round(scrollY); localStorage.setItem(KEY, JSON.stringify(S)); }, 500); }, { passive: true });
 (async () => {
   document.documentElement.style.setProperty("--fs", S.fs + "px"); aplicarTema();
   LIBROS = await get("data/libros.json");
