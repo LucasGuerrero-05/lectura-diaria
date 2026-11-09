@@ -119,20 +119,34 @@ function vHoy(a) {
   d.forEach(([b, c]) => a.append(filaCap(b, c)));
 }
 
+function segTestamento(valor, alCambiar, conTodo) {
+  const op = [["at", "Antiguo"], ["nt", "Nuevo"]]; if (conTodo) op.unshift(["todo", "Todo"]);
+  const seg = el("div", { class: "seg", style: "grid-template-columns:repeat(" + op.length + ",1fr)", role: "group", "aria-label": "Testamento" });
+  op.forEach(([k, t]) => seg.append(el("button", { class: valor === k ? "on" : "", "aria-pressed": valor === k, style: "min-height:46px", onclick: () => alCambiar(k) }, t)));
+  return seg;
+}
+let testLeer = "at", testMapa = "todo";
 function vLeer(a) {
-  a.append(el("h1", {}, "Leer"), el("p", { class: "sub" }, "Elegí cualquier libro y capítulo"));
-  const sb = el("select", { id: "sb" }, LIBROS.map((l, i) => el("option", { value: i }, l.n)));
-  const sc = el("select", { id: "sc" });
-  const fill = () => sc.replaceChildren(...Array.from({ length: LIBROS[sb.value].c }, (_, i) => el("option", { value: i + 1 }, "Capítulo " + (i + 1))));
-  sb.onchange = fill; fill();
-  a.append(el("div", { class: "card" }, el("label", { for: "sb" }, "Libro"), sb, el("div", { style: "height:10px" }), el("label", { for: "sc" }, "Capítulo"), sc,
-    el("button", { class: "big", onclick: () => abrir(+sb.value, +sc.value) }, ico("leer", "sm"), "Abrir capítulo")));
+  a.append(el("h1", {}, "Leer"), el("p", { class: "sub" }, "Elegí el testamento, el libro y el capítulo"));
+  const card = el("div", { class: "card" });
+  const pintar = () => {
+    card.replaceChildren(segTestamento(testLeer, (k) => { testLeer = k; pintar(); }));
+    const desde = testLeer === "at" ? 0 : 39, hasta = testLeer === "at" ? 39 : 66;
+    const sb = el("select", { id: "sb" }, LIBROS.slice(desde, hasta).map((l, i) => el("option", { value: desde + i }, l.n)));
+    const sc = el("select", { id: "sc" });
+    const fill = () => sc.replaceChildren(...Array.from({ length: LIBROS[sb.value].c }, (_, i) => el("option", { value: i + 1 }, "Capítulo " + (i + 1))));
+    sb.onchange = fill; fill();
+    card.append(el("label", { for: "sb" }, "Libro"), sb, el("label", { for: "sc" }, "Capítulo"), sc,
+      el("button", { class: "big", onclick: () => abrir(+sb.value, +sc.value) }, ico("leer", "sm"), "Abrir capítulo"));
+  };
+  pintar(); a.append(card);
 }
 
 function vMapa(a) {
   const { r, t } = stats();
   a.append(el("h1", {}, "Mapa de progreso"), el("p", { class: "sub" }, "Tocá un capítulo para abrirlo"));
   a.append(el("div", { class: "card" }, el("div", { class: "row sp" }, el("b", {}, ((r / t) * 100).toFixed(1) + "% de la Biblia"), el("span", { class: "mut" }, r + " / " + t)), barra(((r / t) * 100).toFixed(1))));
+  a.append(segTestamento(testMapa, (k) => { testMapa = k; render(); }, true));
   const sec = (tt, d, h) => {
     a.append(el("h2", {}, tt));
     for (let b = d; b < h; b++) {
@@ -141,19 +155,31 @@ function vMapa(a) {
         el("div", { class: "cells" }, l.v.map((_, i) => el("button", { class: "cell" + (isRead(b, i + 1) ? " r" : ""), "aria-label": nombre(b, i + 1) + (isRead(b, i + 1) ? ", leído" : ""), onclick: () => abrir(b, i + 1) }, i + 1)))));
     }
   };
-  sec("Antiguo Testamento", 0, 39); sec("Nuevo Testamento", 39, 66);
+  if (testMapa !== "nt") sec("Antiguo Testamento", 0, 39);
+  if (testMapa !== "at") sec("Nuevo Testamento", 39, 66);
 }
 
 // ---------- lector ----------
+const vecinos = (b, c) => ({
+  prev: c > 1 ? [b, c - 1] : b > 0 ? [b - 1, LIBROS[b - 1].c] : null,
+  next: c < LIBROS[b].c ? [b, c + 1] : b < 65 ? [b + 1, 1] : null,
+});
 async function vLector(a) {
   const { b, c } = view;
   a.append(el("div", { class: "top" }, el("button", { class: "ghost", "aria-label": "Volver", onclick: () => { view = null; render(); } }, ico("atras")), el("h1", {}, nombre(b, c)),
+    el("button", { class: "ghost", id: "btnPrev", "aria-label": "Capítulo anterior", onclick: () => { const v = vecinos(view.b, view.c).prev; if (v) abrir(...v); } }, ico("izq")),
+    el("button", { class: "ghost", id: "btnNext", "aria-label": "Capítulo siguiente", onclick: () => { const v = vecinos(view.b, view.c).next; if (v) abrir(...v); } }, ico("der")),
     el("button", { class: "ghost", id: "btnCom", "aria-label": "Ir al comentario completo", title: "Comentario completo" }, ico("rollo"))));
   const cargando = el("p", { class: "mut" }, "Cargando…"); a.append(cargando);
   let rv;
   try { rv = (await get("data/b/" + b + ".json"))[c - 1]; } catch (e) { cargando.textContent = "No se pudo cargar el texto. Revisá tu conexión."; return; }
   cargando.remove();
   const tx = el("div", { class: "versos" }); rv.forEach((v, i) => tx.append(el("p", { class: "v" }, el("sup", {}, i + 1), v))); a.append(tx);
+  {
+    const v = vecinos(b, c);
+    a.append(el("div", { class: "nextbar" }, v.prev && el("button", { class: "sec", onclick: () => abrir(...v.prev) }, ico("izq", "sm"), nombre(...v.prev)),
+      v.next && el("button", { class: "sec", onclick: () => abrir(...v.next) }, nombre(...v.next), ico("der", "sm"))));
+  }
   const zona = el("div", { class: "zona" }); a.append(zona);
   const sig = () => {
     const prev = c > 1 ? [b, c - 1] : b > 0 ? [b - 1, LIBROS[b - 1].c] : null, n = c < LIBROS[b].c ? [b, c + 1] : b < 65 ? [b + 1, 1] : null;
@@ -199,6 +225,10 @@ async function vLector(a) {
   }
 }
 
+function marcarHasta(b, c) {
+  LIBROS.forEach((l, i) => l.v.forEach((_, j) => { if (i < b || (i === b && j + 1 <= c)) S.read[ck(i, j + 1)] = S.read[ck(i, j + 1)] || hoy(); }));
+  save();
+}
 // ---------- ajustes ----------
 function aplicarTema() {
   const t = S.theme || "auto", r = document.documentElement;
@@ -263,7 +293,17 @@ function vAjustes(a) {
   const fs = el("input", { type: "range", min: 15, max: 28, value: S.fs, "aria-label": "Tamaño de letra", oninput: () => { S.fs = +fs.value; document.documentElement.style.setProperty("--fs", S.fs + "px"); save(); } });
   a.append(seccion("texto", "Tamaño de letra", fs, el("p", { class: "v prueba" }, "En el principio crió Dios los cielos y la tierra.")));
 
-  // --- Copia ---
+  // --- Ya leí hasta ---
+  {
+    const sb = el("select", { id: "yb" }, LIBROS.map((l, i) => el("option", { value: i }, l.n)));
+    const sc = el("select", { id: "yc" });
+    const fill = () => sc.replaceChildren(...Array.from({ length: LIBROS[sb.value].c }, (_, i) => el("option", { value: i + 1 }, "Capítulo " + (i + 1))));
+    sb.onchange = fill; fill();
+    a.append(seccion("check", "Marcar lo ya leído", el("p", { class: "mut nota", style: "margin-top:0" }, "Elegí hasta dónde llegaste y marco como leído todo lo anterior, incluido ese capítulo."),
+      el("label", { for: "yb" }, "Libro"), sb, el("label", { for: "yc" }, "Capítulo"), sc,
+      el("button", { class: "big", onclick: () => { if (!confirm("¿Marcar como leído hasta " + nombre(+sb.value, +sc.value) + "?")) return; marcarHasta(+sb.value, +sc.value); render(); } }, "Marcar hasta aquí")));
+  }
+    // --- Copia ---
   a.append(seccion("bajar", "Copia de seguridad", el("p", { class: "mut nota", style: "margin-top:0" }, "Guardá tu progreso por si cambiás de celular."),
     el("div", { class: "dos" },
       el("button", { class: "sec", onclick: () => { const u = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: "application/json" })); el("a", { href: u, download: "lectura-progreso.json" }).click(); } }, ico("bajar", "sm"), "Exportar"),
@@ -286,5 +326,6 @@ async function chequearRecordatorio() {
   document.documentElement.style.setProperty("--fs", S.fs + "px"); aplicarTema();
   LIBROS = await get("data/libros.json");
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (!S.sembrado) { marcarHasta(1, 17); S.sembrado = 1; save(); } // ya leído: Génesis completo y Éxodo hasta el 17
   render(); syncCfg(); chequearRecordatorio(); setInterval(chequearRecordatorio, 60000);
 })();
